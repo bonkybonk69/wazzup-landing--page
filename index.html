@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WazzUp! | Meet People Near You. Actually Use Your City.</title>
+
+<!-- Bootstrap 5.3 — grid, utilities, navbar, components -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- fonts. went with Syne for the big text since it has a kind of
+     street vibe, and DM Sans for paragraphs cause its easy to read -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ------------------------------------------------------------------
+   colour + font tokens (pulled from the figma file)
+   Bootstrap takes over layout/spacing; we keep design tokens here
+   ------------------------------------------------------------------ */
+:root{
+  --c-yellow:#FFE30A;
+  --c-blue:#00CDFF;
+  --c-ink:#111111;
+  --c-ink2:#1a1a1a;
+  --c-paper:#ffffff;
+  --c-grey:#f4f4f4;
+  --c-soft:#888888;
+  --f-display:'Syne', sans-serif;
+  --f-text:'DM Sans', sans-serif;
+
+  /* Override Bootstrap's primary so our components inherit our brand colour */
+  --bs-primary: #FFE30A;
+  --bs-body-font-family: 'DM Sans', sans-serif;
+}
+
+/* basic reset, nothing fancy */
+*,*::before,*::after{ box-sizing:border-box; }
+html{ scroll-behavior:smooth; }
+body{
+  font-family:var(--f-text);
+  background:var(--c-paper);
+  color:var(--c-ink);
+  overflow-x:hidden;
+}
+a{ color:inherit; text-decoration:none; }
+
+/* little yellow chip i reuse above section headings */
+.chip{
+  display:inline-block;
+  background:var(--c-yellow);
+  color:var(--c-ink);
+  font-family:var(--f-display);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  padding:5px 13px;
+  border-radius:999px;
+  margin-bottom:16px;
+}
+
+/* ------------------------------------------------------------------
+   top bar — uses Bootstrap's navbar, styled to match original
+   ------------------------------------------------------------------ */
+.topbar{
+  padding:14px 0;
+  transition:background .25s, box-shadow .25s;
+  background:transparent;
+}
+.topbar.scrolled{
+  background:rgba(17,17,17,.94) !important;
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  box-shadow:0 1px 0 rgba(255,255,255,.06);
+}
+.brand{
+  font-family:var(--f-display);
+  font-size:22px;
+  font-weight:800;
+  color:var(--c-paper) !important;
+  letter-spacing:-.5px;
+}
+.brand span{ color:var(--c-yellow); }
+
+/* Bootstrap's .nav-link reset to match original menu style */
+.topbar .nav-link{
+  font-size:14px;
+  font-weight:500;
+  color:rgba(255,255,255,.6) !important;
+  transition:color .2s;
+  padding:0 !important;
+}
+.topbar .nav-link:hover{ color:var(--c-yellow) !important; }
+
+.cta-pill{
+  background:var(--c-yellow);
+  color:var(--c-ink);
+  font-family:var(--f-display);
+  font-weight:700;
+  font-size:13px;
+  padding:10px 22px;
+  border-radius:999px;
+  border:none;
+  cursor:pointer;
+  transition:transform .15s, box-shadow .15s;
+  white-space:nowrap;
+}
+.cta-pill:hover{
+  color:var(--c-ink);
+  transform:translateY(-2px);
+  box-shadow:0 6px 20px rgba(255,227,10,.35);
+}
+
+/* Bootstrap toggler — custom look to match burger style */
+.navbar-toggler{
+  border:none !important;
+  padding:4px;
+  box-shadow:none !important;
+}
+.navbar-toggler-icon{
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255%2C255%2C255%2C0.8%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+}
+
+/* Bootstrap offcanvas drawer — styled to match original dark drawer */
+.offcanvas{
+  background:var(--c-ink) !important;
+}
+.offcanvas-header .btn-close{
+  filter:invert(1);
+}
+.offcanvas .nav-link{
+  font-family:var(--f-display);
+  font-size:32px;
+  font-weight:800;
+  color:var(--c-paper) !important;
+  transition:color .15s;
+  padding:8px 0 !important;
+}
+.offcanvas .nav-link:hover{ color:var(--c-yellow) !important; }
+
+/* ------------------------------------------------------------------
+   hero block
+   ------------------------------------------------------------------ */
+.hero{
+  background:var(--c-ink);
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  padding:130px 0 80px;
+  position:relative;
+  overflow:hidden;
+}
+.hero-glow{
+  position:absolute;
+  top:-180px; right:-180px;
+  width:560px; height:560px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(255,227,10,.12) 0%, transparent 68%);
+  pointer-events:none;
+}
+.hero-tag{ margin-bottom:22px; }
+.hero-tag-dot{
+  width:8px; height:8px; border-radius:50%;
+  background:var(--c-yellow);
+  animation:bounce 2s ease-in-out infinite;
+  flex-shrink:0;
+}
+@keyframes bounce{
+  0%,100%{ opacity:1; transform:scale(1); }
+  50%   { opacity:.5; transform:scale(.7); }
+}
+.hero-tag-text{ font-size:13px; color:rgba(255,255,255,.45); font-weight:500; }
+
+.hero-h1{
+  font-family:var(--f-display);
+  font-size:clamp(40px, 5.5vw, 70px);
+  font-weight:800;
+  color:var(--c-paper);
+  line-height:1.0;
+  letter-spacing:-2px;
+  margin-bottom:22px;
+}
+.hero-h1 .hl{ position:relative; color:var(--c-yellow); }
+.hero-h1 .hl::after{
+  content:'';
+  position:absolute;
+  bottom:4px; left:0; right:0;
+  height:3px;
+  background:var(--c-blue);
+  border-radius:2px;
+}
+.hero-p{
+  font-size:17px;
+  line-height:1.75;
+  color:rgba(255,255,255,.5);
+  max-width:420px;
+  margin-bottom:36px;
+}
+
+.btn-yellow{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  background:var(--c-yellow);
+  color:var(--c-ink);
+  font-weight:700;
+  font-size:15px;
+  padding:14px 26px;
+  border-radius:14px;
+  transition:transform .15s, box-shadow .15s;
+}
+.btn-yellow:hover{
+  color:var(--c-ink);
+  transform:translateY(-2px);
+  box-shadow:0 10px 28px rgba(255,227,10,.3);
+}
+.btn-line{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  background:transparent;
+  color:var(--c-paper);
+  font-weight:600;
+  font-size:15px;
+  padding:14px 26px;
+  border-radius:14px;
+  border:1.5px solid rgba(255,255,255,.15);
+  transition:border-color .2s, color .2s;
+}
+.btn-line:hover{ border-color:var(--c-yellow); color:var(--c-yellow); }
+
+/* phone mockup that floats */
+.hero-phone{ position:relative; }
+.phone-aura{
+  position:absolute;
+  inset:-40px;
+  background:radial-gradient(circle at 50% 50%, rgba(255,227,10,.18) 0%, transparent 65%);
+  border-radius:50%;
+  pointer-events:none;
+  z-index:0;
+}
+.phone-body{
+  width:270px;
+  height:550px;
+  background:#1c1c1c;
+  border-radius:40px;
+  border:2px solid rgba(255,255,255,.08);
+  overflow:hidden;
+  position:relative;
+  z-index:1;
+  box-shadow:0 40px 80px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.04);
+  animation:float 4s ease-in-out infinite;
+  margin:0 auto;
+}
+.phone-body::before{
+  content:'';
+  position:absolute;
+  top:0; left:50%;
+  transform:translateX(-50%);
+  width:110px; height:28px;
+  background:#111;
+  border-radius:0 0 18px 18px;
+  z-index:5;
+}
+@keyframes float{
+  0%,100%{ transform:translateY(0) rotate(.8deg); }
+  50%   { transform:translateY(-14px) rotate(-.8deg); }
+}
+.phone-inside{
+  width:100%;
+  height:100%;
+  background:#18202e;
+  display:flex;
+  flex-direction:column;
+  padding:36px 14px 14px;
+}
+.pi-bar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.pi-name{ font-family:var(--f-display); font-size:15px; font-weight:800; color:var(--c-yellow); }
+.pi-pic{ width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg, var(--c-yellow), var(--c-blue)); }
+.pi-map{
+  flex:1;
+  background:#202a3c;
+  border-radius:14px;
+  position:relative;
+  overflow:hidden;
+  margin-bottom:10px;
+}
+.pi-map::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size:28px 28px;
+}
+.drop{
+  position:absolute;
+  width:28px; height:28px;
+  border-radius:50% 50% 50% 0;
+  transform:rotate(-45deg);
+  box-shadow:0 4px 12px rgba(0,0,0,.4);
+}
+.drop::after{
+  content:'';
+  position:absolute;
+  inset:7px;
+  border-radius:50%;
+  background:rgba(0,0,0,.3);
+}
+.drop-1{ background:var(--c-yellow); top:28%; left:22%; animation:bob 2.5s ease-in-out infinite; }
+.drop-2{ background:var(--c-blue);   top:52%; left:56%; animation:bob 2.5s ease-in-out infinite .6s; }
+.drop-3{ background:var(--c-yellow); top:68%; left:30%; animation:bob 2.5s ease-in-out infinite 1.2s; }
+@keyframes bob{
+  0%,100%{ transform:rotate(-45deg) scale(1); }
+  50%   { transform:rotate(-45deg) scale(1.1); }
+}
+.pi-tabs{
+  display:flex;
+  justify-content:space-around;
+  align-items:center;
+  background:#1a1a1a;
+  border-radius:12px;
+  padding:10px 0;
+}
+.pi-tab{ width:6px; height:6px; border-radius:3px; background:rgba(255,255,255,.2); }
+.pi-tab.active{ width:22px; background:var(--c-yellow); }
+
+/* ------------------------------------------------------------------
+   problem / why bother section
+   ------------------------------------------------------------------ */
+.problem{
+  background:var(--c-ink2);
+  padding:90px 0;
+  position:relative;
+}
+.problem::before{
+  content:'';
+  position:absolute;
+  top:0; left:0; right:0;
+  height:1px;
+  background:linear-gradient(to right, transparent 5%, var(--c-yellow) 50%, transparent 95%);
+}
+.problem-h2{
+  font-family:var(--f-display);
+  font-size:clamp(28px, 4vw, 46px);
+  font-weight:800;
+  color:var(--c-paper);
+  line-height:1.1;
+  letter-spacing:-1px;
+  margin-bottom:14px;
+}
+.problem-h2 em{ color:var(--c-yellow); font-style:normal; }
+.problem-lead{ font-size:16px; color:rgba(255,255,255,.45); line-height:1.7; }
+
+/* Bootstrap .card override for problem cards */
+.pc{
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.07) !important;
+  border-radius:18px !important;
+  padding:32px 26px;
+  transition:border-color .2s, transform .2s;
+  height:100%;
+}
+.pc:hover{ border-color:rgba(255,227,10,.25) !important; transform:translateY(-4px); }
+.pc-emoji{ font-size:36px; margin-bottom:18px; }
+.pc-stat{
+  font-family:var(--f-display);
+  font-size:44px;
+  font-weight:800;
+  color:var(--c-yellow);
+  line-height:1;
+  margin-bottom:8px;
+}
+.pc-h3{ font-size:16px; font-weight:600; color:var(--c-paper); margin-bottom:8px; }
+.pc-text{ font-size:13px; color:rgba(255,255,255,.4); line-height:1.65; }
+
+/* ------------------------------------------------------------------
+   how it works
+   ------------------------------------------------------------------ */
+.howto{ background:var(--c-paper); padding:100px 0; }
+.head-h2{
+  font-family:var(--f-display);
+  font-size:clamp(28px, 4vw, 46px);
+  font-weight:800;
+  letter-spacing:-1.5px;
+  line-height:1.1;
+  color:var(--c-ink);
+  margin-bottom:14px;
+}
+.head-p{
+  font-size:16px;
+  color:var(--c-soft);
+  max-width:420px;
+  margin:0 auto;
+  line-height:1.7;
+}
+
+/* Bootstrap card override for how-to steps */
+.howto-item{
+  background:var(--c-grey);
+  border:none !important;
+  border-radius:20px !important;
+  padding:36px 28px;
+  height:100%;
+}
+.howto-num{
+  width:42px; height:42px;
+  border-radius:50%;
+  background:var(--c-yellow);
+  color:var(--c-ink);
+  font-family:var(--f-display);
+  font-size:18px;
+  font-weight:800;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin-bottom:22px;
+}
+.howto-emoji{ font-size:36px; margin-bottom:14px; }
+.howto-h3{ font-family:var(--f-display); font-size:19px; font-weight:800; margin-bottom:10px; }
+.howto-text{ font-size:14px; color:var(--c-soft); line-height:1.65; }
+
+/* ------------------------------------------------------------------
+   features
+   ------------------------------------------------------------------ */
+.feats{ background:var(--c-ink); padding:90px 0; }
+.feat-h3{
+  font-family:var(--f-display);
+  font-size:clamp(24px, 3.5vw, 38px);
+  font-weight:800;
+  color:var(--c-paper);
+  line-height:1.1;
+  letter-spacing:-1px;
+  margin:12px 0 14px;
+}
+.feat-h3 span{ color:var(--c-yellow); }
+.feat-p{
+  font-size:15px;
+  line-height:1.75;
+  color:rgba(255,255,255,.45);
+  margin-bottom:24px;
+}
+.tag-row{ display:flex; flex-wrap:wrap; gap:8px; }
+
+/* Bootstrap badge override for feature tags */
+.tag{
+  font-size:12px;
+  font-weight:600;
+  color:rgba(255,255,255,.6);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:999px;
+  padding:6px 14px;
+  background:transparent;
+}
+
+/* mini phone screens for feature blocks */
+.mini-phone{
+  width:220px; height:420px;
+  background:#1e1e1e;
+  border-radius:32px;
+  border:2px solid rgba(255,255,255,.07);
+  overflow:hidden;
+  box-shadow:0 28px 56px rgba(0,0,0,.45);
+  margin:0 auto;
+}
+.scr-find{ height:100%; background:#18202e; padding:28px 14px 14px; display:flex; flex-direction:column; }
+.scr-find-bar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.scr-find-title{ font-family:var(--f-display); font-size:14px; font-weight:800; color:var(--c-yellow); }
+.scr-find-map{
+  flex:1;
+  background:#202a3c;
+  border-radius:12px;
+  position:relative;
+  overflow:hidden;
+  margin-bottom:10px;
+}
+.scr-find-map::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+  background-size:22px 22px;
+}
+.tiny-pin{ position:absolute; width:20px; height:20px; border-radius:50% 50% 50% 0; transform:rotate(-45deg); }
+.tp1{ background:var(--c-yellow); top:25%; left:20%; }
+.tp2{ background:var(--c-blue);   top:50%; left:55%; }
+.tp3{ background:var(--c-yellow); top:65%; left:30%; }
+.scr-find-list{ display:flex; flex-direction:column; gap:7px; }
+.scr-find-row{
+  background:rgba(255,255,255,.05);
+  border-radius:8px;
+  padding:8px 10px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.scr-find-dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.scr-find-name{ font-size:11px; font-weight:600; color:rgba(255,255,255,.8); }
+.scr-find-meta{ font-size:10px; color:rgba(255,255,255,.35); }
+
+.scr-chat{ height:100%; background:#111; padding:28px 14px 14px; display:flex; flex-direction:column; gap:8px; }
+.scr-chat-head{ display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+.scr-chat-pic{ width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg, var(--c-yellow), var(--c-blue)); }
+.scr-chat-name{ font-size:12px; font-weight:700; color:var(--c-paper); }
+.msg{ max-width:78%; padding:9px 12px; border-radius:14px; font-size:11px; line-height:1.5; }
+.msg.in{ background:rgba(255,255,255,.08); color:rgba(255,255,255,.75); border-bottom-left-radius:3px; }
+.msg.out{ background:var(--c-yellow); color:var(--c-ink); font-weight:600; margin-left:auto; border-bottom-right-radius:3px; }
+.scr-chat-input{
+  margin-top:auto;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:999px;
+  padding:9px 14px;
+  font-size:10px;
+  color:rgba(255,255,255,.25);
+}
+
+.scr-perks{ height:100%; background:#0d0d0d; padding:28px 14px 14px; display:flex; flex-direction:column; }
+.scr-perks-title{ font-family:var(--f-display); font-size:14px; font-weight:800; color:var(--c-paper); margin-bottom:14px; }
+.scr-perks-card{ background:var(--c-yellow); border-radius:14px; padding:18px; margin-bottom:14px; text-align:center; }
+.scr-perks-pts{ font-family:var(--f-display); font-size:30px; font-weight:800; color:var(--c-ink); }
+.scr-perks-sub{ font-size:10px; color:rgba(0,0,0,.5); font-weight:600; }
+.scr-perks-list{ display:flex; flex-direction:column; gap:8px; }
+.scr-perks-row{
+  background:rgba(255,255,255,.05);
+  border-radius:9px;
+  padding:9px 12px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.scr-perks-row span:first-child{ font-size:11px; color:rgba(255,255,255,.7); font-weight:600; }
+.scr-perks-row span:last-child{ font-size:11px; color:var(--c-yellow); font-weight:700; }
+
+/* ------------------------------------------------------------------
+   audience cards — Bootstrap card component used here
+   ------------------------------------------------------------------ */
+.crowd{ background:var(--c-grey); padding:90px 0; }
+.crowd-card{
+  background:var(--c-paper);
+  border-radius:18px !important;
+  padding:32px 22px;
+  text-align:center;
+  border:2px solid transparent !important;
+  transition:border-color .2s, transform .2s, box-shadow .2s;
+  height:100%;
+}
+.crowd-card:hover{
+  border-color:var(--c-yellow) !important;
+  transform:translateY(-5px);
+  box-shadow:0 16px 40px rgba(255,227,10,.12);
+}
+.crowd-emoji{ font-size:44px; margin-bottom:14px; }
+.crowd-name{ font-family:var(--f-display); font-size:17px; font-weight:800; margin-bottom:10px; }
+.crowd-text{ font-size:13px; color:var(--c-soft); line-height:1.6; margin-bottom:16px; }
+.crowd-pill{
+  display:inline-block;
+  background:#fff8cc;
+  color:#7a6500;
+  font-size:11px;
+  font-weight:700;
+  padding:5px 12px;
+  border-radius:999px;
+}
+
+/* ------------------------------------------------------------------
+   call to action band
+   ------------------------------------------------------------------ */
+.shout{ background:var(--c-yellow); padding:90px 0; }
+.shout-h2{
+  font-family:var(--f-display);
+  font-size:clamp(32px, 5.5vw, 62px);
+  font-weight:800;
+  color:var(--c-ink);
+  line-height:1.0;
+  letter-spacing:-2px;
+  margin-bottom:14px;
+}
+.shout-p{
+  font-size:17px;
+  color:rgba(0,0,0,.55);
+  max-width:420px;
+  margin:0 auto 40px;
+  line-height:1.65;
+}
+.store-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:12px;
+  background:var(--c-ink);
+  color:var(--c-paper);
+  font-weight:600;
+  font-size:15px;
+  padding:16px 28px;
+  border-radius:14px;
+  transition:transform .15s, box-shadow .15s;
+}
+.store-btn:hover{ color:var(--c-paper); transform:translateY(-2px); box-shadow:0 12px 32px rgba(0,0,0,.25); }
+.store-icon{ font-size:26px; }
+.store-tiny{ font-size:11px; opacity:.45; display:block; margin-bottom:2px; }
+.store-big{ font-size:17px; font-weight:800; display:block; }
+.shout-notes span{ font-size:13px; color:rgba(0,0,0,.5); font-weight:500; }
+.shout-notes span::before{ content:'\2713 '; font-weight:700; color:var(--c-ink); }
+
+/* ------------------------------------------------------------------
+   footer
+   ------------------------------------------------------------------ */
+.foot{ background:var(--c-ink); padding:56px 0 28px; border-top:2px solid var(--c-yellow); }
+.foot-brand{ font-family:var(--f-display); font-size:24px; font-weight:800; color:var(--c-paper); margin-bottom:10px; }
+.foot-brand span{ color:var(--c-yellow); }
+.foot-line{ font-size:13px; color:rgba(255,255,255,.35); line-height:1.6; max-width:220px; }
+.foot-col h5{
+  font-family:var(--f-display);
+  font-size:12px;
+  font-weight:700;
+  color:var(--c-paper);
+  letter-spacing:1px;
+  text-transform:uppercase;
+  margin-bottom:14px;
+}
+.foot-col ul{ list-style:none; padding:0; display:flex; flex-direction:column; gap:9px; }
+.foot-col a{ font-size:13px; color:rgba(255,255,255,.35); transition:color .15s; }
+.foot-col a:hover{ color:var(--c-yellow); }
+.foot-cr{ font-size:12px; color:rgba(255,255,255,.25); }
+.soc-btn{
+  width:34px; height:34px;
+  border-radius:50%;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:14px;
+  cursor:pointer;
+  transition:background .15s;
+}
+.soc-btn:hover{ background:var(--c-yellow); }
+
+/* fade in stuff once it scrolls into view */
+.appear{
+  opacity:0;
+  transform:translateY(30px);
+  transition:opacity .6s ease, transform .6s ease;
+}
+.appear.in-view{ opacity:1; transform:none; }
+.lag-1{ transition-delay:.1s; }
+.lag-2{ transition-delay:.2s; }
+.lag-3{ transition-delay:.3s; }
+
+/* hero center-align on small screens */
+@media (max-width: 991px){
+  .hero-copy{ text-align:center; }
+  .hero-p{ margin-left:auto; margin-right:auto; }
+  .hero-row{ justify-content:center; }
+  .hero-phone{ margin-bottom:32px; }
+}
+</style>
+</head>
+
+<body>
+
+<!-- ----------------------------------------------------------------
+     Bootstrap Offcanvas — replaces the custom drawer
+     ---------------------------------------------------------------- -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="mobileMenu" aria-labelledby="mobileMenuLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title visually-hidden" id="mobileMenuLabel">Menu</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body d-flex flex-column justify-content-center align-items-center gap-3">
+    <nav class="nav flex-column text-center">
+      <a class="nav-link" href="#problem" data-bs-dismiss="offcanvas">Why It Matters</a>
+      <a class="nav-link" href="#howto"   data-bs-dismiss="offcanvas">How It Works</a>
+      <a class="nav-link" href="#feats"   data-bs-dismiss="offcanvas">Features</a>
+      <a class="nav-link" href="#crowd"   data-bs-dismiss="offcanvas">Who It Helps</a>
+      <a class="nav-link" href="#download" data-bs-dismiss="offcanvas">Download</a>
+    </nav>
+  </div>
+</div>
+
+<!-- ----------------------------------------------------------------
+     Bootstrap Navbar — fixed-top, transparent → dark on scroll
+     ---------------------------------------------------------------- -->
+<nav class="navbar navbar-dark fixed-top topbar" id="topbar">
+  <div class="container">
+    <!-- brand -->
+    <a class="navbar-brand brand" href="#">Wazz<span>Up!</span></a>
+
+    <!-- desktop nav links — hidden below lg -->
+    <ul class="nav d-none d-lg-flex gap-4 me-auto ms-5">
+      <li class="nav-item"><a class="nav-link" href="#problem">Why It Matters</a></li>
+      <li class="nav-item"><a class="nav-link" href="#howto">How It Works</a></li>
+      <li class="nav-item"><a class="nav-link" href="#feats">Features</a></li>
+      <li class="nav-item"><a class="nav-link" href="#crowd">Who It Helps</a></li>
+    </ul>
+
+    <!-- desktop CTA — hidden below lg -->
+    <a href="#download" class="cta-pill d-none d-lg-inline-block me-2">Get the App</a>
+
+    <!-- mobile toggler opens offcanvas — shown below lg -->
+    <button class="navbar-toggler d-lg-none" type="button"
+            data-bs-toggle="offcanvas" data-bs-target="#mobileMenu"
+            aria-controls="mobileMenu" aria-label="Open menu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ================================================================
+     HERO
+     Using Bootstrap row / col for the two-column layout
+     ================================================================ -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="container position-relative">
+    <div class="row align-items-center g-5">
+
+      <!-- copy -->
+      <div class="col-12 col-lg-7 hero-copy order-2 order-lg-1">
+        <div class="hero-tag d-flex align-items-center gap-2">
+          <div class="hero-tag-dot"></div>
+          <span class="hero-tag-text">A social app built for real, in person connection</span>
+        </div>
+
+        <h1 class="hero-h1">
+          Put the phone down.<br>Find your <span class="hl">crowd.</span>
+        </h1>
+
+        <p class="hero-p">
+          WazzUp! is for students, newcomers, remote workers and travellers who want a
+          simple way to meet people close by, without the usual awkwardness of city life.
+        </p>
+
+        <!-- Bootstrap d-flex gap utility -->
+        <div class="hero-row d-flex flex-wrap gap-3 mb-4">
+          <a href="#download" class="btn-yellow">&#127822; &nbsp;App Store</a>
+          <a href="#download" class="btn-line">&#9654; &nbsp;Google Play</a>
+        </div>
+      </div>
+
+      <!-- phone mockup -->
+      <div class="col-12 col-lg-5 hero-phone order-1 order-lg-2 d-flex justify-content-center">
+        <div class="phone-aura"></div>
+        <div class="phone-body">
+          <div class="phone-inside">
+            <div class="pi-bar">
+              <span class="pi-name">WazzUp!</span>
+              <div class="pi-pic"></div>
+            </div>
+            <div class="pi-map">
+              <div class="drop drop-1"></div>
+              <div class="drop drop-2"></div>
+              <div class="drop drop-3"></div>
+            </div>
+            <div class="pi-tabs">
+              <div class="pi-tab active"></div>
+              <div class="pi-tab"></div>
+              <div class="pi-tab"></div>
+              <div class="pi-tab"></div>
+              <div class="pi-tab"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     PROBLEM
+     Bootstrap row g-4 for the three stat cards
+     ================================================================ -->
+<section class="problem" id="problem">
+  <div class="container">
+
+    <div class="problem-top mb-5 appear" style="max-width:600px;">
+      <span class="chip">The Reality</span>
+      <h2 class="problem-h2">
+        Cities are full of people.<br><em>So why does everyone feel by themselves?</em>
+      </h2>
+      <p class="problem-lead">
+        Even in busy cities, building a real friend group is hard work, especially when
+        you have just arrived, work from home, or you are still settling in. WazzUp!
+        is our attempt to make that part easier.
+      </p>
+    </div>
+
+    <!-- Bootstrap grid: stacks to single col on mobile, 3 cols on md+ -->
+    <div class="row g-4">
+      <div class="col-12 col-md-4 appear lag-1">
+        <div class="pc card">
+          <div class="pc-emoji">&#128542;</div>
+          <div class="pc-stat">1 in 3</div>
+          <div class="pc-h3">Adults say they feel lonely</div>
+          <div class="pc-text">Living in a city on your own can quietly chip away at confidence and how you feel day to day.</div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-4 appear lag-2">
+        <div class="pc card">
+          <div class="pc-emoji">&#127961;&#65039;</div>
+          <div class="pc-stat">67%</div>
+          <div class="pc-h3">Find it hard to make friends locally</div>
+          <div class="pc-text">Most people are open to meeting new faces. They just do not have an easy starting point.</div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-4 appear lag-3">
+        <div class="pc card">
+          <div class="pc-emoji">&#128241;</div>
+          <div class="pc-stat">89%</div>
+          <div class="pc-h3">Would try the right app for it</div>
+          <div class="pc-text">Younger users say they would happily use a tool to meet locals, as long as it feels safe and not pushy.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================================================================
+     HOW IT WORKS
+     Bootstrap row g-4 for the three steps
+     ================================================================ -->
+<section class="howto" id="howto">
+  <div class="container">
+
+    <div class="text-center mb-5 appear">
+      <span class="chip">Three Easy Steps</span>
+      <h2 class="head-h2">From signup to a new mate.<br>No awkward small talk needed.</h2>
+      <p class="head-p">We tried to take out anything that gets in the way of just meeting someone.</p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-12 col-md-4 appear lag-1">
+        <div class="howto-item card">
+          <div class="howto-num">1</div>
+          <div class="howto-emoji">&#128506;&#65039;</div>
+          <h3 class="howto-h3">Look Around</h3>
+          <p class="howto-text">
+            Sign up, pick a few interests, then open the live map to see people, events
+            and spots nearby that line up with what you are into.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-4 appear lag-2">
+        <div class="howto-item card">
+          <div class="howto-num">2</div>
+          <div class="howto-emoji">&#128172;</div>
+          <h3 class="howto-h3">Say Hi</h3>
+          <p class="howto-text">
+            Chat inside the app first so there is no pressure to swap numbers. Take it at
+            your own speed and only meet up when you are ready.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-4 appear lag-3">
+        <div class="howto-item card">
+          <div class="howto-num">3</div>
+          <div class="howto-emoji">&#127881;</div>
+          <h3 class="howto-h3">Show Up</h3>
+          <p class="howto-text">
+            Head to a local meet up, hang out, and earn rewards for actually turning up.
+            That is how a quick chat turns into a real friend.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================================================================
+     FEATURES
+     Bootstrap row align-items-center for the alternating layout
+     ================================================================ -->
+<section class="feats" id="feats">
+  <div class="container">
+
+    <div class="text-center mb-5 appear">
+      <span class="chip" style="background:rgba(255,227,10,.15); color:var(--c-yellow);">What You Get</span>
+      <h2 class="head-h2" style="color:var(--c-paper);">Just the things you need.<br>None of the stuff you do not.</h2>
+      <p class="head-p" style="color:rgba(255,255,255,.35);">
+        Three simple features that work together so meeting people feels normal, not forced.
+      </p>
+    </div>
+
+    <!-- Feature 1: copy left, art right -->
+    <div class="row align-items-center g-5 mb-5 pb-4 appear">
+      <div class="col-12 col-md-6 feat-copy">
+        <span class="chip">Discover</span>
+        <h3 class="feat-h3">A live look at what is on<br><span>right around your area</span></h3>
+        <p class="feat-p">
+          Open the map and you will see local events, people with shared interests,
+          and good spots near you. There is no algorithm pushing things at you, just
+          your local area, laid out plainly.
+        </p>
+        <div class="tag-row">
+          <span class="tag">&#128205; Live Map</span>
+          <span class="tag">&#128269; Interest Filters</span>
+          <span class="tag">&#9889; Real Time</span>
+        </div>
+      </div>
+      <div class="col-12 col-md-6 feat-art">
+        <div class="mini-phone">
+          <div class="scr-find">
+            <div class="scr-find-bar">
+              <span class="scr-find-title">WazzUp!</span>
+              <span style="font-size:15px; color:rgba(255,255,255,.4);">&#128269;</span>
+            </div>
+            <div class="scr-find-map">
+              <div class="tiny-pin tp1"></div>
+              <div class="tiny-pin tp2"></div>
+              <div class="tiny-pin tp3"></div>
+            </div>
+            <div class="scr-find-list">
+              <div class="scr-find-row">
+                <div class="scr-find-dot" style="background:var(--c-yellow);"></div>
+                <div>
+                  <div class="scr-find-name">Coffee Catch Up</div>
+                  <div class="scr-find-meta">0.3 km, 12 going</div>
+                </div>
+              </div>
+              <div class="scr-find-row">
+                <div class="scr-find-dot" style="background:var(--c-blue);"></div>
+                <div>
+                  <div class="scr-find-name">Park Yoga</div>
+                  <div class="scr-find-meta">0.7 km, 8 going</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature 2: art left, copy right — Bootstrap order classes handle the swap -->
+    <div class="row align-items-center g-5 mb-5 pb-4 appear">
+      <div class="col-12 col-md-6 feat-copy order-md-2">
+        <span class="chip">Chat</span>
+        <h3 class="feat-h3">Get past the awkward bit<br><span>before you even meet</span></h3>
+        <p class="feat-p">
+          The built in chat lets you warm up to a new connection without giving out
+          your number. It makes going from "hi I saw you on the map" to "fancy a coffee?"
+          feel a lot less weird.
+        </p>
+        <div class="tag-row">
+          <span class="tag">&#128172; In App Chat</span>
+          <span class="tag">&#128274; Private and Safe</span>
+          <span class="tag">&#127918; Ice Breakers</span>
+        </div>
+      </div>
+      <div class="col-12 col-md-6 feat-art order-md-1">
+        <div class="mini-phone">
+          <div class="scr-chat">
+            <div class="scr-chat-head">
+              <div class="scr-chat-pic"></div>
+              <span class="scr-chat-name">Alex M. &#128993;</span>
+            </div>
+            <div class="msg in">Are you going to that coffee thing too?</div>
+            <div class="msg out">Yeah, first time though. Have you been before?</div>
+            <div class="msg in">Couple of times, super chill. Want to grab a seat together?</div>
+            <div class="msg out">Sounds good, see you there &#9749;</div>
+            <div class="scr-chat-input">Type a message...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature 3: copy left, art right -->
+    <div class="row align-items-center g-5 appear">
+      <div class="col-12 col-md-6 feat-copy">
+        <span class="chip">Rewards</span>
+        <h3 class="feat-h3">Get something back<br><span>for actually showing up</span></h3>
+        <p class="feat-p">
+          Pick up WazzPoints when you go to events, meet someone new, or try things
+          you would not normally do. Spend them on real stuff like coffees, tickets
+          or subscriptions.
+        </p>
+        <div class="tag-row">
+          <span class="tag">&#11088; WazzPoints</span>
+          <span class="tag">&#127873; Real Perks</span>
+          <span class="tag">&#127942; Leaderboard</span>
+        </div>
+      </div>
+      <div class="col-12 col-md-6 feat-art">
+        <div class="mini-phone">
+          <div class="scr-perks">
+            <div class="scr-perks-title">Your Wallet</div>
+            <div class="scr-perks-card">
+              <div class="scr-perks-pts">2,450</div>
+              <div class="scr-perks-sub">WazzPoints to spend</div>
+            </div>
+            <div class="scr-perks-list">
+              <div class="scr-perks-row"><span>&#9749; Free Coffee</span><span>500 pts</span></div>
+              <div class="scr-perks-row"><span>&#127903; Event Ticket</span><span>1,200 pts</span></div>
+              <div class="scr-perks-row"><span>&#127925; Spotify Month</span><span>2,000 pts</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================================================================
+     AUDIENCE
+     Bootstrap card component + 4-col grid (2 on mobile)
+     ================================================================ -->
+<section class="crowd" id="crowd">
+  <div class="container">
+
+    <div class="text-center mb-5 appear">
+      <span class="chip">Who It Helps</span>
+      <h2 class="head-h2">For anyone who has ever felt<br>like a stranger in their own city</h2>
+      <p class="head-p">You do not have to be struggling. You just want a bit more out of where you live.</p>
+    </div>
+
+    <!-- Bootstrap grid: 2 cols on mobile, 4 cols on lg -->
+    <div class="row g-4">
+      <div class="col-6 col-lg-3 appear lag-1">
+        <div class="crowd-card card">
+          <div class="crowd-emoji">&#127891;</div>
+          <h3 class="crowd-name">Students</h3>
+          <p class="crowd-text">
+            New city, new course, and it feels like everyone already has friends.
+            WazzUp! helps you find your group from week one.
+          </p>
+          <span class="crowd-pill">Find your group</span>
+        </div>
+      </div>
+
+      <div class="col-6 col-lg-3 appear lag-2">
+        <div class="crowd-card card">
+          <div class="crowd-emoji">&#127757;</div>
+          <h3 class="crowd-name">Newcomers</h3>
+          <p class="crowd-text">
+            Settling in somewhere brand new is a lot. We connect you with people
+            who share your interests, not just your background.
+          </p>
+          <span class="crowd-pill">Build your circle</span>
+        </div>
+      </div>
+
+      <div class="col-6 col-lg-3 appear lag-3">
+        <div class="crowd-card card">
+          <div class="crowd-emoji">&#128187;</div>
+          <h3 class="crowd-name">Remote Workers</h3>
+          <p class="crowd-text">
+            Working from home is great until you realise it has been three days
+            since you spoke to a real person. We sort that out.
+          </p>
+          <span class="crowd-pill">Get out of the house</span>
+        </div>
+      </div>
+
+      <div class="col-6 col-lg-3 appear lag-3">
+        <div class="crowd-card card">
+          <div class="crowd-emoji">&#9992;&#65039;</div>
+          <h3 class="crowd-name">Travellers</h3>
+          <p class="crowd-text">
+            Skip the tourist traps. Meet locals and other travellers for the kind of
+            experiences you only hear about from people who actually live there.
+          </p>
+          <span class="crowd-pill">See more</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================================================================
+     DOWNLOAD BAND
+     Bootstrap d-flex flex-wrap justify-content-center gap utilities
+     ================================================================ -->
+<section class="shout text-center" id="download">
+  <div class="container">
+    <h2 class="shout-h2 appear">Ready to actually<br>enjoy your city?</h2>
+    <p class="shout-p appear lag-1">
+      Grab WazzUp! free. No subscription needed to get started, just sign up and have a look.
+    </p>
+
+    <div class="d-flex flex-wrap justify-content-center gap-3 mb-4 appear lag-2">
+      <a href="#" class="store-btn">
+        <span class="store-icon">&#127822;</span>
+        <span><span class="store-tiny">Download on the</span><span class="store-big">App Store</span></span>
+      </a>
+      <a href="#" class="store-btn">
+        <span class="store-icon">&#9654;</span>
+        <span><span class="store-tiny">Get it on</span><span class="store-big">Google Play</span></span>
+      </a>
+    </div>
+
+    <div class="shout-notes d-flex justify-content-center gap-4 flex-wrap appear lag-3">
+      <span>Free to download</span>
+      <span>No ads</span>
+      <span>Your data is yours</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     FOOTER
+     Bootstrap row g-4 for the footer columns
+     ================================================================ -->
+<footer class="foot">
+  <div class="container">
+    <div class="row g-4 mb-5">
+      <div class="col-12 col-md-4">
+        <div class="foot-brand">Wazz<span>Up!</span></div>
+        <p class="foot-line">Helping people find their people, in cities all over the place.</p>
+      </div>
+
+      <div class="col-4 col-md-2 offset-md-2 foot-col">
+        <h5>Product</h5>
+        <ul>
+          <li><a href="#">How It Works</a></li>
+          <li><a href="#">Features</a></li>
+          <li><a href="#">Rewards</a></li>
+        </ul>
+      </div>
+
+      <div class="col-4 col-md-2 foot-col">
+        <h5>Company</h5>
+        <ul>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Careers</a></li>
+        </ul>
+      </div>
+
+      <div class="col-4 col-md-2 foot-col">
+        <h5>Legal</h5>
+        <ul>
+          <li><a href="#">Privacy</a></li>
+          <li><a href="#">Terms</a></li>
+          <li><a href="#">Safety</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 pt-3 border-top" style="border-color:rgba(255,255,255,.07) !important;">
+      <span class="foot-cr">&copy; 2025 WazzUp! All rights reserved.</span>
+      <div class="d-flex gap-2">
+        <div class="soc-btn">&#120143;</div>
+        <div class="soc-btn">in</div>
+        <div class="soc-btn">&#128247;</div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Bootstrap 5 JS bundle (includes Popper — needed for offcanvas) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  // makes the top nav go dark after a tiny scroll, just feels nicer
+  var bar = document.getElementById('topbar');
+  window.addEventListener('scroll', function () {
+    bar.classList.toggle('scrolled', window.scrollY > 50);
+  });
+
+  // tiny scroll-in animation using IntersectionObserver
+  var watcher = new IntersectionObserver(function (items) {
+    items.forEach(function (item) {
+      if (item.isIntersecting) {
+        item.target.classList.add('in-view');
+        watcher.unobserve(item.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  document.querySelectorAll('.appear').forEach(function (el) {
+    watcher.observe(el);
+  });
+</script>
+
+</body>
+</html>
